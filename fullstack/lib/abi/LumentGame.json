@@ -95,7 +95,7 @@
       {
         "name": "mode",
         "type": "uint8",
-        "internalType": "enum NadientGame.Mode"
+        "internalType": "enum LumentGame.Mode"
       },
       {
         "name": "amount",
@@ -219,7 +219,7 @@
       {
         "name": "tiers",
         "type": "uint8[]",
-        "internalType": "enum NadientGame.Tier[]"
+        "internalType": "enum LumentGame.Tier[]"
       },
       {
         "name": "scores",
@@ -631,7 +631,7 @@
         "name": "tier",
         "type": "uint8",
         "indexed": false,
-        "internalType": "enum NadientGame.Tier"
+        "internalType": "enum LumentGame.Tier"
       },
       {
         "name": "reward",
@@ -713,7 +713,7 @@
         "name": "mode",
         "type": "uint8",
         "indexed": false,
-        "internalType": "enum NadientGame.Mode"
+        "internalType": "enum LumentGame.Mode"
       }
     ],
     "anonymous": false
