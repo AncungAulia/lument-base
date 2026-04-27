@@ -1,0 +1,250 @@
+@import "tailwindcss";
+@import "../node_modules/tw-animate-css/dist/tw-animate.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(93.88% 0.033 300.19);
+  --secondary-background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --main-foreground: oklch(0% 0 0);
+  --main: oklch(70.28% 0.1753 295.36);
+  --border: oklch(0% 0 0);
+  --ring: oklch(0% 0 0);
+  --overlay: oklch(0% 0 0 / 0.8);
+  --shadow: 2px 2px 0px 0px var(--border);
+  --chart-1: #A985FF;
+  --chart-2: #00D696;
+  --chart-3: #FACC00;
+  --chart-4: #FF4D50;
+  --chart-5: #0099FF;
+  --chart-active-dot: #000;
+}
+
+.dark {
+  --background: oklch(30.14% 0.0826 296.5);
+  --secondary-background: oklch(23.93% 0 0);
+  --foreground: oklch(92.49% 0 0);
+  --main-foreground: oklch(0% 0 0);
+  --main: oklch(70.28% 0.1753 295.36);
+  --border: oklch(0% 0 0);
+  --ring: oklch(100% 0 0);
+  --shadow: 2px 2px 0px 0px var(--border);
+  --chart-1: #A985FF;
+  --chart-2: #00BD84;
+  --chart-3: #E0B700;
+  --chart-4: #FF6669;
+  --chart-5: #008AE5;
+  --chart-active-dot: #fff;
+}
+
+@theme inline {
+  --color-main: var(--main);
+  --color-background: var(--background);
+  --color-secondary-background: var(--secondary-background);
+  --color-foreground: var(--foreground);
+  --color-main-foreground: var(--main-foreground);
+  --color-border: var(--border);
+  --color-overlay: var(--overlay);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --spacing-boxShadowX: 2px;
+  --spacing-boxShadowY: 2px;
+  --spacing-reverseBoxShadowX: -2px;
+  --spacing-reverseBoxShadowY: -2px;
+  --radius-base: 10px;
+  --shadow-shadow: var(--shadow);
+  --font-weight-base: 500;
+  --font-weight-heading: 800;
+}
+
+@layer base {
+  body {
+    @apply text-foreground font-base bg-background;
+    transition: background-color 0.5s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+/* ── Game Zone: neutral override for color-matching gameplay ── */
+/* When actively playing, override the purple theme to monochrome    */
+/* so the player's eyes aren't biased by surrounding UI colors.      */
+body.game-active {
+  --background: oklch(100% 0 0);
+  --secondary-background: oklch(100% 0 0);
+  --main: oklch(20% 0 0);
+  --main-foreground: oklch(100% 0 0);
+}
+
+body.game-active nav {
+  display: none !important;
+}
+
+.dark body.game-active {
+  --background: oklch(12% 0 0);
+  --secondary-background: oklch(15% 0 0);
+  --main: oklch(88% 0 0);
+  --main-foreground: oklch(0% 0 0);
+}
+
+/* ── Landing page ────────────────────────────── */
+.landing-hero {
+  min-height: calc(100dvh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, oklch(80% 0.15 295) / 0.15, transparent 50%),
+    radial-gradient(circle at 80% 30%, oklch(75% 0.12 280) / 0.1, transparent 40%),
+    radial-gradient(circle at 60% 80%, oklch(85% 0.1 310) / 0.08, transparent 45%);
+  pointer-events: none;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(var(--border) / 0.06 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) / 0.06 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Floating color swatches animation ────── */
+@keyframes float-1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(15px, -20px) rotate(5deg); }
+  50% { transform: translate(-10px, -35px) rotate(-3deg); }
+  75% { transform: translate(20px, -15px) rotate(4deg); }
+}
+@keyframes float-2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-20px, -25px) rotate(-6deg); }
+  66% { transform: translate(15px, -10px) rotate(4deg); }
+}
+@keyframes float-3 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(10px, -30px) rotate(8deg); }
+}
+
+.float-swatch-1 { animation: float-1 6s ease-in-out infinite; }
+.float-swatch-2 { animation: float-2 8s ease-in-out infinite; }
+.float-swatch-3 { animation: float-3 7s ease-in-out infinite; }
+
+
+
+/* ── Blink animation ──────────────────────── */
+@keyframes blink {
+  0%, 60% { opacity: 1; }
+  70%, 100% { opacity: .35; }
+}
+.animate-blink { animation: blink 1s infinite; }
+
+/* ── Marquee ──────────────────────────────── */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee-scroll 25s linear infinite;
+}
+
+/* ── Game-specific styles ─────────────────── */
+.color-swatch {
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-base);
+  transition: all 0.2s ease;
+}
+
+.swatch-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+  height: 200px;
+}
+
+.swatch-compare > div:first-child {
+  border-right: 2px solid var(--border);
+}
+
+.hsl-slider-track {
+  position: relative;
+  border-radius: var(--radius-base);
+  overflow: hidden;
+}
+
+.hsl-slider-hue {
+  background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+}
+.hsl-slider-sat {
+  background: linear-gradient(90deg, #808080, oklch(70.28% 0.1753 295.36));
+}
+.hsl-slider-lit {
+  background: linear-gradient(90deg, #000, #808080, #fff);
+}
+
+/* ── Smooth page transitions ──────────────── */
+.page-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Lobby VS Screen Animations ───────────── */
+@keyframes slide-in-left-heavy {
+  0% { transform: translateX(-150vw) rotate(-15deg); opacity: 0; }
+  60% { transform: translateX(10px) rotate(5deg); opacity: 1; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes slide-in-right-heavy {
+  0% { transform: translateX(150vw) rotate(15deg); opacity: 0; }
+  60% { transform: translateX(-10px) rotate(-5deg); opacity: 1; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes smash-zoom-in {
+  0% { transform: scale(3); opacity: 0; filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); }
+  50% { transform: scale(0.9); opacity: 1; filter: drop-shadow(0 0 0px rgba(0,0,0,0)); }
+  100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 0px rgba(0,0,0,0)); }
+}
+
+.animate-slide-in-left-heavy {
+  animation: slide-in-left-heavy 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-slide-in-right-heavy {
+  animation: slide-in-right-heavy 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-smash-zoom {
+  animation: smash-zoom-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  opacity: 0;
+}
