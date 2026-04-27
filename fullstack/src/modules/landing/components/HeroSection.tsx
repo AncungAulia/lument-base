@@ -21,7 +21,7 @@ export default function HeroSection({ onPlay }: { onPlay: () => void }) {
           <div className="w-14 h-14 color-swatch float-swatch-3" style={{ background: "hsl(40, 90%, 65%)" }} />
         </div>
 
-        <Badge className="mb-6 text-sm">Color Memory Game on Monad</Badge>
+        <Badge className="mb-6 text-sm">Color Memory Game on Base</Badge>
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-heading leading-tight mb-6 text-foreground">
           Trust Your Eyes.<br />
           <span className="inline-flex items-center gap-3 text-main">Win USDC.</span>

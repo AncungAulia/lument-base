@@ -7,9 +7,9 @@ export default function Footer() {
             <div className="w-6 h-6 rounded-base bg-main border-2 border-border flex items-center justify-center">
               <span className="text-main-foreground font-heading text-xs">N</span>
             </div>
-            <span className="font-heading text-foreground">Nadient</span>
+            <span className="font-heading text-foreground">Lument</span>
           </div>
-          <p className="text-sm text-foreground/50">Color memory game on Monad blockchain. Built with 🎨.</p>
+          <p className="text-sm text-foreground/50">Color memory game on Base blockchain. Built with 🎨.</p>
           <div className="flex gap-4 text-sm text-foreground/60">
             <a href="#" className="hover:text-foreground transition-colors">Twitter</a>
             <a href="#" className="hover:text-foreground transition-colors">Discord</a>

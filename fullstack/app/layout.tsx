@@ -24,9 +24,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nadient",
+  title: "Lument",
   description:
-    "Trust your eyes, match colors from memory, and win USDC on the Monad blockchain. Play solo or compete with others.",
+    "Trust your eyes, match colors from memory, and win USDC on the Base blockchain. Play solo or compete with others.",
 };
 
 export const viewport: Viewport = {

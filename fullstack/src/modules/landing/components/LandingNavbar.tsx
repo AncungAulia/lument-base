@@ -15,7 +15,7 @@ export default function LandingNavbar({ onPlay }: { onPlay: () => void }) {
             <div className="w-8 h-8 rounded-base bg-main border-2 border-border shadow-shadow flex items-center justify-center">
               <span className="text-main-foreground font-heading text-sm">N</span>
             </div>
-            <span className="font-heading text-xl text-foreground">Nadient</span>
+            <span className="font-heading text-xl text-foreground">Lument</span>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={onPlay} className="gap-2" variant={isConnected ? "default" : "neutral"}>
