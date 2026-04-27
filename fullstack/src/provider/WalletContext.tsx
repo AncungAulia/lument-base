@@ -17,7 +17,7 @@ import {
   useChainId,
 } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { config, monadTestnet } from "@/lib/sc/wagmi";
+import { config, baseSepolia } from "@/lib/sc/wagmi";
 
 type WalletState = {
   isConnected: boolean;
@@ -71,8 +71,8 @@ function WalletInner({ children }: { children: ReactNode }) {
   }, [address]);
 
   useEffect(() => {
-    if (isConnected && chainId !== monadTestnet.id) {
-      switchChain({ chainId: monadTestnet.id });
+    if (isConnected && chainId !== baseSepolia.id) {
+      switchChain({ chainId: baseSepolia.id });
     }
   }, [isConnected, chainId, switchChain]);
 
@@ -84,7 +84,7 @@ function WalletInner({ children }: { children: ReactNode }) {
   const handleConnect = () => {
     const injected = connectors.find((c) => c.id === "injected");
     const connector = injected ?? connectors[0];
-    if (connector) connect({ connector, chainId: monadTestnet.id });
+    if (connector) connect({ connector, chainId: baseSepolia.id });
   };
 
   return (

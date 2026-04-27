@@ -8,9 +8,9 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { GAME_ADDRESS, gameAbi } from "./contracts";
-import { monadTestnet } from "./wagmi";
+import { baseSepolia } from "./wagmi";
 
-const CHAIN_ID = 10143;
+const CHAIN_ID = 84532;
 
 export const signerAccount = privateKeyToAccount(
   process.env.SIGNER_PRIVATE_KEY as `0x${string}`,
@@ -21,13 +21,13 @@ const backendAccount = privateKeyToAccount(
 );
 
 export const publicClient = createPublicClient({
-  chain: monadTestnet,
+  chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL),
 });
 
 export const walletClient = createWalletClient({
   account: backendAccount,
-  chain: monadTestnet,
+  chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL),
 });
 
@@ -106,6 +106,13 @@ export async function signAndResolve(
     deadline,
     signature,
   ] as const;
+
+  const ethBalance = await publicClient.getBalance({ address: backendAccount.address });
+  if (ethBalance === BigInt(0)) {
+    throw new Error(
+      `Backend wallet ${backendAccount.address} has 0 ETH on chain ${CHAIN_ID}. Fund it with Base Sepolia ETH to pay for gas.`,
+    );
+  }
 
   await publicClient.simulateContract({
     account: backendAccount,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2, Vault } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export default function MatchedLobbyScene({
   staking,
   countdown,
   onStake,
+  onLeave,
 }: {
   mode: "duel" | "royale";
   players: string[];
@@ -25,12 +26,18 @@ export default function MatchedLobbyScene({
   staking: boolean;
   countdown: number | null;
   onStake: () => void;
+  onLeave?: () => void;
 }) {
   const required = REQUIRED_PLAYERS[mode];
   const normalizedMe = myAddress.toLowerCase();
   const stakedSet = new Set(stakedPlayers.map((p) => p.toLowerCase()));
   const myStaked = stakedSet.has(normalizedMe);
   const everyoneStaked = stakedCount >= players.length && players.length > 0;
+
+  // Leave is only possible while we are still waiting — once the countdown
+  // fires (all staked, game transitioning) or the player is mid-tx, it is
+  // disabled to avoid corrupting game state.
+  const canLeave = !everyoneStaked && countdown === null && !staking && !!onLeave;
 
   return (
     <div className="max-w-2xl mx-auto page-enter">
@@ -118,6 +125,16 @@ export default function MatchedLobbyScene({
           ) : (
             <> Pay 10 USDC</>
           )}
+        </Button>
+      )}
+
+      {canLeave && (
+        <Button
+          variant="neutral"
+          className="w-full gap-2 mt-2 bg-chart-4! text-white hover:bg-chart-4/90!"
+          onClick={onLeave}
+        >
+          <X className="w-4 h-4" /> Leave Lobby
         </Button>
       )}
     </div>

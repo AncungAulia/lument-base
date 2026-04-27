@@ -1,4 +1,4 @@
-import gameAbi from "../abi/NadientGame.json";
+import gameAbi from "../abi/LumentGame.json";
 import usdcAbi from "../abi/MockUSDC.json";
 
 export const GAME_ADDRESS = (process.env.NEXT_PUBLIC_GAME_ADDRESS ||

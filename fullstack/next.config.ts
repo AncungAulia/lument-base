@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["spyglass-parking-postcard.ngrok-free.dev"],
   turbopack: {
     root: process.cwd(),
   },

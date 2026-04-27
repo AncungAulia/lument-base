@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { hslCss } from "@/src/utils/color";
 import type { HSL } from "@/src/utils/color";
 import type { Mode } from "../types/play.types";
@@ -21,12 +23,14 @@ export default function WaitingScene({
   mode,
   target,
   guess,
+  onCancel,
 }: {
   myAccuracy: number;
   myTier: { name: string; payout: number; color: string };
   mode: Mode;
   target: HSL;
   guess: HSL;
+  onCancel?: () => void;
 }) {
   const [displayAcc, setDisplayAcc] = useState(0);
 
@@ -49,6 +53,7 @@ export default function WaitingScene({
         className="relative w-full rounded-2xl overflow-hidden border-2 border-border shadow-shadow flex flex-col"
         style={{ minHeight: "min(65vh,550px)" }}
       >
+
         {/* Top half — player's guess */}
         <div
           className="relative flex-1 p-6 flex flex-col justify-between"
@@ -106,6 +111,16 @@ export default function WaitingScene({
           </div>
         </div>
       </div>
+
+      {onCancel && (
+        <Button
+          variant="neutral"
+          className="w-full gap-2 mt-3 bg-chart-4! text-white hover:bg-chart-4/90!"
+          onClick={onCancel}
+        >
+          <X className="w-4 h-4" /> Leave
+        </Button>
+      )}
     </div>
   );
 }

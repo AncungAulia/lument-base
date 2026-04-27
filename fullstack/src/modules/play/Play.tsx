@@ -23,7 +23,12 @@ import {
   startRound as apiStartRound,
   submitGuess as apiSubmitGuess,
 } from "./services/play.service";
-import { cancelMatchmaking } from "./services/matchmaking.service";
+import {
+  cancelMatchmaking,
+  leaveMatchedLobby as leaveMatchedLobbyApi,
+  leaveMatchedBeacon,
+  pollMatchedStatus,
+} from "./services/matchmaking.service";
 import type {
   Phase,
   Mode,
@@ -70,9 +75,15 @@ export default function PlayClient({
   const [initRoomJoined, setInitRoomJoined] = useState(false);
 
   const guessStartRef = useRef<number>(0);
-  const phaseRef = useRef<{ address?: string; mode: Mode; phase: Phase }>({
+  const phaseRef = useRef<{
+    address?: string;
+    mode: Mode;
+    phase: Phase;
+    roundId: string | null;
+  }>({
     mode: "solo",
     phase: "select",
+    roundId: null,
   });
   const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSubmittingRef = useRef(false);
@@ -175,13 +186,15 @@ export default function PlayClient({
   );
 
   useEffect(() => {
-    phaseRef.current = { address: address ?? undefined, mode, phase };
-  }, [address, mode, phase]);
+    phaseRef.current = { address: address ?? undefined, mode, phase, roundId };
+  }, [address, mode, phase, roundId]);
 
   useEffect(() => {
     const handlePageExit = () => {
-      if (phaseRef.current.phase === "queueing")
-        cleanupOnUnload(phaseRef.current.mode);
+      const { phase, address: addr, mode: m, roundId: rid } = phaseRef.current;
+      if (phase === "queueing") cleanupOnUnload(m);
+      // Fire-and-forget beacon so the server can refund if stakes exist
+      if (phase === "matched" && addr && rid) leaveMatchedBeacon(addr, rid);
     };
 
     window.addEventListener("pagehide", handlePageExit);
@@ -233,6 +246,36 @@ export default function PlayClient({
     readStakedPlayers,
     roundId,
   ]);
+
+  // Poll matched-status so we detect when the opponent leaves after staking.
+  // Equivalent to a "player_left_staked" socket push in this HTTP-polling arch.
+  useEffect(() => {
+    if (phase !== "matched" || !roundId || !address || mode === "solo") return;
+
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const status = await pollMatchedStatus(address, roundId);
+        if (cancelled || !status.cancelled) return;
+        showErrorToast("Opponent left", {
+          description: status.refundTx
+            ? "Your stake has been refunded."
+            : "The match was cancelled.",
+          id: "partner-left",
+        });
+        setMatchedPlayers([]);
+        setRoundId(null);
+        setPhase("select");
+      } catch {}
+    };
+
+    poll();
+    const id = setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [phase, roundId, address, mode]);
 
   useEffect(() => {
     if (phase !== "matched") {
@@ -456,6 +499,16 @@ export default function PlayClient({
     }
   }, [doStake, mode, readStakedPlayers, roundId, roomManager]);
 
+  const leaveMatchedLobby = useCallback(async () => {
+    if (!address || !roundId) return;
+    try {
+      await leaveMatchedLobbyApi(address, roundId);
+    } catch {}
+    setMatchedPlayers([]);
+    setRoundId(null);
+    setPhase("select");
+  }, [address, roundId]);
+
   const acc = accuracy(target, guess);
   const t = tier(acc);
   const dE = deltaE(target, guess);
@@ -540,6 +593,7 @@ export default function PlayClient({
         staking={matchedStakeSubmitting}
         countdown={matchedCountdown}
         onStake={stakeMatchedRound}
+        onLeave={leaveMatchedLobby}
       />
     );
   }
@@ -641,6 +695,11 @@ export default function PlayClient({
         mode={mode}
         target={target}
         guess={guess}
+        onCancel={() => {
+          stopResultPolling();
+          isSubmittingRef.current = false;
+          setPhase("select");
+        }}
       />
     );
   }

@@ -1,7 +1,7 @@
 import { createPublicClient, http } from "viem";
-import { monadTestnet } from "./wagmi";
+import { baseSepolia } from "./wagmi";
 
 export const publicClient = createPublicClient({
-  chain: monadTestnet,
+  chain: baseSepolia,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL),
 });
