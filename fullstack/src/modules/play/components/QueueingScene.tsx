@@ -10,11 +10,13 @@ export default function QueueingScene({
   mode,
   queueCount,
   onCancel,
+  canceling = false,
   roomCode,
 }: {
   mode: "duel" | "royale";
   queueCount: number;
   onCancel: () => void;
+  canceling?: boolean;
   roomCode?: string | null;
 }) {
   const required = REQUIRED_PLAYERS[mode];
@@ -95,9 +97,14 @@ export default function QueueingScene({
       <Button
         variant="neutral"
         className="w-full gap-2 !bg-chart-4 text-white hover:!bg-chart-4/90"
+        disabled={canceling}
         onClick={onCancel}
       >
-        <X className="w-4 h-4" /> Cancel
+        {canceling ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> Canceling...</>
+        ) : (
+          <><X className="w-4 h-4" /> Cancel</>
+        )}
       </Button>
     </div>
   );

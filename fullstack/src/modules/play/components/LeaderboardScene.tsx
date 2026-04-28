@@ -59,8 +59,8 @@ export default function LeaderboardScene({
     const me = scores.find((p) => p.address.toLowerCase() === myAddress?.toLowerCase());
     const rank = me ? scores.indexOf(me) + 1 : 0;
     const text = me
-      ? `I hit ${me.accuracy.toFixed(1)}% (#${rank}) in ${me.timeSec?.toFixed(2) ?? "?"}s on Nadient 🎨`
-      : `Winner: ${result.winnerAccuracy.toFixed(1)}% on Nadient 🎨`;
+      ? `I hit ${me.accuracy.toFixed(1)}% (#${rank}) in ${me.timeSec?.toFixed(2) ?? "?"}s on Lument`
+      : `Winner: ${result.winnerAccuracy.toFixed(1)}% on Lument`;
     navigator.clipboard?.writeText(text).then(
       () => { setShareFeedback("Copied!"); setTimeout(() => setShareFeedback(null), 1500); },
       () => setShareFeedback("Failed"),

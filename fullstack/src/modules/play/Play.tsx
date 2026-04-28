@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
-import { useReadContract } from "wagmi";
+import { useAccount, useChainId, useReadContract } from "wagmi";
 import { useWallet } from "@/src/provider/WalletContext";
 import { GAME_ADDRESS, gameAbi } from "@/lib/sc/contracts";
+import { baseSepolia } from "@/lib/sc/wagmi";
 import {
   accuracy,
   tier,
@@ -14,6 +21,14 @@ import {
 } from "@/src/utils/color";
 import type { HSL, TargetDifficulty } from "@/src/utils/color";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
 import { useStake } from "./hooks/useStake";
 import { useMatchmaking } from "./hooks/useMatchmaking";
 import { useRoomManager } from "./hooks/useRoomManager";
@@ -48,13 +63,49 @@ import WaitingScene from "./components/WaitingScene";
 import LeaderboardScene from "./components/LeaderboardScene";
 import ResultScene from "./components/ResultScene";
 
+const PROTECTED_PHASES: Phase[] = [
+  "staking",
+  "queueing",
+  "matched",
+  "lobby",
+  "preview",
+  "guess",
+  "waiting",
+];
+
+function isProtectedPhase(phase: Phase) {
+  return PROTECTED_PHASES.includes(phase);
+}
+
+function useProgressiveLabel(active: boolean, labels: string[]) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+
+    const resetId = window.setTimeout(() => setIndex(0), 0);
+    const id = setInterval(() => {
+      setIndex((current) => Math.min(current + 1, labels.length - 1));
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(resetId);
+      clearInterval(id);
+    };
+  }, [active, labels.length]);
+
+  return active ? (labels[index] ?? labels[0]) : labels[0];
+}
+
 export default function PlayClient({
   initialRoomCode,
 }: {
   initialRoomCode?: string;
 }) {
   const router = useRouter();
-  const { address } = useWallet();
+  const { address, connect, isConnected } = useWallet();
+  const { isConnected: wagmiConnected } = useAccount();
+  const chainId = useChainId();
 
   const [tab, setTab] = useState<TabKey>(initialRoomCode ? "multi" : "single");
   const [phase, setPhase] = useState<Phase>("select");
@@ -72,7 +123,13 @@ export default function PlayClient({
   );
   const [matchedStakeSubmitting, setMatchedStakeSubmitting] = useState(false);
   const [matchedCountdown, setMatchedCountdown] = useState<number | null>(null);
-  const [initRoomJoined, setInitRoomJoined] = useState(false);
+  const [exitWarningOpen, setExitWarningOpen] = useState(false);
+  const [startingRound, setStartingRound] = useState(false);
+  const [queueCanceling, setQueueCanceling] = useState(false);
+  const [submittingGuess, setSubmittingGuess] = useState(false);
+  const [roomActionPending, setRoomActionPending] = useState<string | null>(
+    null,
+  );
 
   const guessStartRef = useRef<number>(0);
   const phaseRef = useRef<{
@@ -87,7 +144,9 @@ export default function PlayClient({
   });
   const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSubmittingRef = useRef(false);
+  const initRoomJoinedRef = useRef(false);
   const lastErrorToastRef = useRef<string | null>(null);
+  const pendingNavigationRef = useRef<string | null>(null);
 
   const { data: soloReserveRaw } = useReadContract({
     address: GAME_ADDRESS,
@@ -96,6 +155,28 @@ export default function PlayClient({
   });
   const soloReserveBalance = soloReserveRaw ? Number(soloReserveRaw) / 1e6 : 0;
   const onlineCount = useOnlineCount(address);
+  const navigationGuarded = isProtectedPhase(phase);
+  const walletReady = !!address && isConnected && wagmiConnected;
+  const wrongNetwork = walletReady && chainId !== baseSepolia.id;
+  const connectionBlocked =
+    phase !== "select" && (!walletReady || wrongNetwork);
+  const actionsBlocked = connectionBlocked;
+  const startFeedback = useProgressiveLabel(startingRound, [
+    "Preparing round...",
+    "Signing in Wallet...",
+    "Confirming on-chain...",
+    "Round ready!",
+  ]);
+  const matchedStakeFeedback = useProgressiveLabel(matchedStakeSubmitting, [
+    "Signing in Wallet...",
+    "Confirming on-chain...",
+    "Stake locked!",
+  ]);
+  const submitFeedback = useProgressiveLabel(submittingGuess, [
+    "Submitting guess...",
+    "Confirming result...",
+    "Syncing leaderboard...",
+  ]);
 
   const { doStake, readStakedPlayers, needsApproval, stakingStep } =
     useStake(address);
@@ -189,6 +270,58 @@ export default function PlayClient({
     phaseRef.current = { address: address ?? undefined, mode, phase, roundId };
   }, [address, mode, phase, roundId]);
 
+  const guardedPush = useCallback(
+    (href: string) => {
+      if (isProtectedPhase(phaseRef.current.phase)) {
+        pendingNavigationRef.current = href;
+        setExitWarningOpen(true);
+        return;
+      }
+      router.push(href);
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (!navigationGuarded) {
+      pendingNavigationRef.current = null;
+      return;
+    }
+
+    window.history.pushState({ lumentGuard: true }, "", window.location.href);
+
+    const handlePopState = () => {
+      if (!isProtectedPhase(phaseRef.current.phase)) return;
+      window.history.pushState({ lumentGuard: true }, "", window.location.href);
+      pendingNavigationRef.current = null;
+      setExitWarningOpen(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [navigationGuarded]);
+
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!isProtectedPhase(phaseRef.current.phase)) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.target && anchor.target !== "_self") return;
+
+      const url = new URL(anchor.href);
+      if (url.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      pendingNavigationRef.current = `${url.pathname}${url.search}${url.hash}`;
+      setExitWarningOpen(true);
+    };
+
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
+
   useEffect(() => {
     const handlePageExit = () => {
       const { phase, address: addr, mode: m, roundId: rid } = phaseRef.current;
@@ -197,12 +330,19 @@ export default function PlayClient({
       if (phase === "matched" && addr && rid) leaveMatchedBeacon(addr, rid);
     };
 
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isProtectedPhase(phaseRef.current.phase)) return;
+      event.preventDefault();
+      event.returnValue = "";
+      handlePageExit();
+    };
+
     window.addEventListener("pagehide", handlePageExit);
-    window.addEventListener("beforeunload", handlePageExit);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       handlePageExit();
       window.removeEventListener("pagehide", handlePageExit);
-      window.removeEventListener("beforeunload", handlePageExit);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [cleanupOnUnload]);
 
@@ -279,14 +419,19 @@ export default function PlayClient({
 
   useEffect(() => {
     if (phase !== "matched") {
-      if (matchedCountdown !== null) setMatchedCountdown(null);
+      if (matchedCountdown !== null) {
+        const id = window.setTimeout(() => setMatchedCountdown(null), 0);
+        return () => window.clearTimeout(id);
+      }
       return;
     }
     if (matchedCountdown === null) return;
     if (matchedCountdown <= 0) {
-      setMatchedCountdown(null);
-      setPhase("preview");
-      return;
+      const id = window.setTimeout(() => {
+        setMatchedCountdown(null);
+        setPhase("preview");
+      }, 0);
+      return () => window.clearTimeout(id);
     }
 
     const id = setTimeout(() => setMatchedCountdown((c) => (c ?? 0) - 1), 1000);
@@ -304,8 +449,14 @@ export default function PlayClient({
   }, [phase]);
 
   useEffect(() => {
-    if (initialRoomCode && address && !initRoomJoined) {
-      setInitRoomJoined(true);
+    if (phase === "guess") return;
+    const id = window.setTimeout(() => setSubmittingGuess(false), 0);
+    return () => window.clearTimeout(id);
+  }, [phase]);
+
+  useEffect(() => {
+    if (initialRoomCode && address && !initRoomJoinedRef.current) {
+      initRoomJoinedRef.current = true;
       roomManager.join(initialRoomCode).then((room) => {
         if (!room) return;
 
@@ -318,7 +469,7 @@ export default function PlayClient({
         roomManager.startPolling(room.code);
       });
     }
-  }, [initialRoomCode, address, initRoomJoined, roomManager]);
+  }, [initialRoomCode, address, roomManager]);
 
   useEffect(
     () => () => {
@@ -348,6 +499,9 @@ export default function PlayClient({
     m: Mode,
     opts?: { practice?: boolean; difficulty?: TargetDifficulty },
   ) => {
+    if (startingRound || actionsBlocked) return;
+    setStartingRound(true);
+
     if (resultTimeoutRef.current) {
       clearTimeout(resultTimeoutRef.current);
       resultTimeoutRef.current = null;
@@ -375,10 +529,14 @@ export default function PlayClient({
       }
       setGuess({ h: 180, s: 50, l: 50 });
       setPhase("preview");
+      setStartingRound(false);
       return;
     }
 
-    if (!address) return;
+    if (!address) {
+      setStartingRound(false);
+      return;
+    }
 
     try {
       const j = await apiStartRound({
@@ -402,12 +560,15 @@ export default function PlayClient({
         e?.shortMessage || e?.message || "Transaction failed. Try again.",
       );
       setPhase("select");
+    } finally {
+      setStartingRound(false);
     }
   };
 
   const submitGuess = useCallback(async () => {
-    if (isSubmittingRef.current) return;
+    if (isSubmittingRef.current || actionsBlocked) return;
     isSubmittingRef.current = true;
+    setSubmittingGuess(true);
 
     const timeSec = guessStartRef.current
       ? (Date.now() - guessStartRef.current) / 1000
@@ -430,6 +591,7 @@ export default function PlayClient({
         if (res.resolved || res.winner) {
           setRoundResult(res as unknown as RoundResult);
           setPhase("leaderboard");
+          setSubmittingGuess(false);
           return;
         }
         if (res.onChainError) {
@@ -463,10 +625,20 @@ export default function PlayClient({
       } catch {}
       resultTimeoutRef.current = setTimeout(() => setPhase("result"), 600);
     }
-  }, [target, guess, mode, roundId, address, isPractice, startResultPolling]);
+  }, [
+    actionsBlocked,
+    target,
+    guess,
+    mode,
+    roundId,
+    address,
+    isPractice,
+    startResultPolling,
+  ]);
 
   const stakeMatchedRound = useCallback(async () => {
-    if (!roundId || mode === "solo") return;
+    if (!roundId || mode === "solo" || matchedStakeSubmitting || actionsBlocked)
+      return;
 
     const modeKey = mode as "duel" | "royale";
     setMatchedStakeSubmitting(true);
@@ -497,21 +669,100 @@ export default function PlayClient({
     } finally {
       setMatchedStakeSubmitting(false);
     }
-  }, [doStake, mode, readStakedPlayers, roundId, roomManager]);
+  }, [
+    actionsBlocked,
+    doStake,
+    matchedStakeSubmitting,
+    mode,
+    readStakedPlayers,
+    roundId,
+    roomManager,
+  ]);
 
   const leaveMatchedLobby = useCallback(async () => {
-    if (!address || !roundId) return;
+    if (!address || !roundId || actionsBlocked) return;
     try {
       await leaveMatchedLobbyApi(address, roundId);
     } catch {}
     setMatchedPlayers([]);
     setRoundId(null);
     setPhase("select");
-  }, [address, roundId]);
+  }, [actionsBlocked, address, roundId]);
 
   const acc = accuracy(target, guess);
   const t = tier(acc);
   const dE = deltaE(target, guess);
+  const renderWithGuards = (scene: ReactNode) => (
+    <>
+      {scene}
+      {connectionBlocked && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-base border-2 border-border bg-error p-6 text-center text-error-foreground shadow-[8px_8px_0_0_var(--border)]">
+            <p className="mb-2 text-xs font-heading uppercase tracking-[0.28em] opacity-80">
+              Pause State
+            </p>
+            <h2 className="mb-3 text-2xl font-heading">
+              Connection Lost or Wrong Network
+            </h2>
+            <p className="mb-5 text-sm leading-6 opacity-90">
+              Please connect to Base Sepolia to continue.
+            </p>
+            <button
+              type="button"
+              onClick={connect}
+              className="inline-flex h-11 items-center justify-center rounded-base border-2 border-border bg-secondary-background px-5 font-heading text-foreground shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+            >
+              Reconnect Wallet
+            </button>
+          </div>
+        </div>
+      )}
+      {exitWarningOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md mx-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-error">
+                  <AlertCircle className="w-5 h-5" />
+                  Are you sure you want to leave?
+                </CardTitle>
+                <CardDescription>
+                  Your entry fee will be lost if you leave during an active
+                  round!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      pendingNavigationRef.current = null;
+                      setExitWarningOpen(false);
+                    }}
+                    className="h-11 rounded-base border-2 border-border bg-secondary-background px-4 font-heading text-foreground hover:bg-main hover:text-main-foreground transition-all cursor-pointer"
+                  >
+                    Stay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const href = pendingNavigationRef.current ?? "/";
+                      pendingNavigationRef.current = null;
+                      setExitWarningOpen(false);
+                      router.push(href);
+                    }}
+                    className="h-11 rounded-base border-2 border-border bg-error px-4 font-heading text-error-foreground hover:bg-error/90 transition-all cursor-pointer"
+                  >
+                    Leave
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   if (phase === "select") {
     return (
@@ -520,17 +771,25 @@ export default function PlayClient({
         setTab={setTab}
         onStart={startRound}
         onCreateRoom={async (input) => {
-          const code = await roomManager.create(input);
+          if (startingRound || actionsBlocked) return;
+          setStartingRound(true);
+          const code = await roomManager.create(input).finally(() => {
+            setStartingRound(false);
+          });
           if (!code) return;
 
           showSuccessToast("Room created", {
             description: `${input.name} is live. Invite your squad with the room code.`,
             id: `room-created:${code}`,
           });
-          router.push(`/play/lobby/${code}`);
+          guardedPush(`/play/lobby/${code}`);
         }}
         onJoinRoom={async (code) => {
-          const room = await roomManager.join(code);
+          if (startingRound || actionsBlocked) return;
+          setStartingRound(true);
+          const room = await roomManager.join(code).finally(() => {
+            setStartingRound(false);
+          });
           if (!room) return;
 
           showSuccessToast("Joined room", {
@@ -539,7 +798,7 @@ export default function PlayClient({
           });
 
           if (!initialRoomCode) {
-            router.push(`/play/lobby/${room.code}`);
+            guardedPush(`/play/lobby/${room.code}`);
           } else {
             roomManager.setRoom(room);
             setPhase("lobby");
@@ -547,7 +806,11 @@ export default function PlayClient({
           }
         }}
         onJoinOnline={async (queueMode) => {
-          const result = await joinQueue(queueMode);
+          if (startingRound || actionsBlocked) return;
+          setStartingRound(true);
+          const result = await joinQueue(queueMode).finally(() => {
+            setStartingRound(false);
+          });
           if (result !== "queued") return;
 
           showSuccessToast("Queue joined", {
@@ -561,29 +824,40 @@ export default function PlayClient({
         onlineCount={onlineCount}
         soloReserveBalance={soloReserveBalance}
         roomLoading={roomManager.loading}
+        actionLoading={startingRound}
+        actionLabel={startFeedback}
       />
     );
   }
 
   if (phase === "staking") {
-    return <StakingScene needsApproval={needsApproval} step={stakingStep} />;
+    return renderWithGuards(
+      <StakingScene needsApproval={needsApproval} step={stakingStep} />,
+    );
   }
 
   if (phase === "queueing") {
-    return (
+    return renderWithGuards(
       <QueueingScene
         mode={mode as "duel" | "royale"}
         queueCount={queueCount}
+        canceling={queueCanceling}
         onCancel={async () => {
-          await cancelQueue(mode);
-          setPhase("select");
+          if (queueCanceling || actionsBlocked) return;
+          setQueueCanceling(true);
+          try {
+            await cancelQueue(mode);
+            setPhase("select");
+          } finally {
+            setQueueCanceling(false);
+          }
         }}
-      />
+      />,
     );
   }
 
   if (phase === "matched") {
-    return (
+    return renderWithGuards(
       <MatchedLobbyScene
         mode={mode as "duel" | "royale"}
         players={matchedPlayers}
@@ -591,44 +865,65 @@ export default function PlayClient({
         stakedCount={matchedStakeCount}
         stakedPlayers={matchedStakedPlayers}
         staking={matchedStakeSubmitting}
+        stakingLabel={matchedStakeFeedback}
         countdown={matchedCountdown}
         onStake={stakeMatchedRound}
         onLeave={leaveMatchedLobby}
-      />
+      />,
     );
   }
 
   if (phase === "lobby" && roomManager.room) {
-    return (
+    return renderWithGuards(
       <LobbyScene
         room={roomManager.room}
         myAddress={address ?? ""}
         readying={roomManager.readying}
+        actionPending={roomActionPending}
         onLeave={async () => {
+          if (roomActionPending || actionsBlocked) return;
+          setRoomActionPending("leave");
           const code = roomManager.room!.code;
-          const ok = await roomManager.leave(code);
+          const ok = await roomManager.leave(code).finally(() => {
+            setRoomActionPending(null);
+          });
           if (!ok) return;
           showSuccessToast("Left room", {
             description: "You are back at the mode selection screen.",
             id: `room-left:${code}`,
           });
-          initialRoomCode ? router.push("/play") : setPhase("select");
+          if (initialRoomCode) {
+            router.push("/play");
+          } else {
+            setPhase("select");
+          }
         }}
         onCancel={async () => {
+          if (roomActionPending || actionsBlocked) return;
+          setRoomActionPending("cancel");
           const code = roomManager.room!.code;
-          const ok = await roomManager.cancel(code);
+          const ok = await roomManager.cancel(code).finally(() => {
+            setRoomActionPending(null);
+          });
           if (!ok) return;
           showSuccessToast("Room cancelled", {
             description: "The lobby has been closed.",
             id: `room-cancelled:${code}`,
           });
-          initialRoomCode ? router.push("/play") : setPhase("select");
+          if (initialRoomCode) {
+            router.push("/play");
+          } else {
+            setPhase("select");
+          }
         }}
         onKick={async (targetAddress) => {
-          const ok = await roomManager.kick(
-            roomManager.room!.code,
-            targetAddress,
-          );
+          if (roomActionPending || actionsBlocked) return;
+          setRoomActionPending("kick");
+          const ok = await roomManager
+            .kick(roomManager.room!.code, targetAddress)
+            .finally(() => {
+              setRoomActionPending(null);
+            });
           if (!ok) return;
           showSuccessToast("Player removed", {
             description: "The lobby roster has been updated.",
@@ -636,6 +931,7 @@ export default function PlayClient({
           });
         }}
         onToggleReady={async () => {
+          if (roomActionPending || actionsBlocked) return;
           const code = roomManager.room!.code;
           const paid = roomManager.room!.paid;
           const ok = await roomManager.toggleReady(roomManager.room!);
@@ -647,35 +943,41 @@ export default function PlayClient({
           }
         }}
         onStart={async () => {
+          if (roomActionPending || actionsBlocked) return;
+          setRoomActionPending("start");
           const code = roomManager.room!.code;
-          const ok = await roomManager.startGame(code);
+          const ok = await roomManager.startGame(code).finally(() => {
+            setRoomActionPending(null);
+          });
           if (!ok) return;
           showSuccessToast("Game starting", {
             description: "Everyone is locked in. Loading the next round.",
             id: `room-start:${code}`,
           });
         }}
-      />
+      />,
     );
   }
 
   if (phase === "preview") {
-    return (
+    return renderWithGuards(
       <PreviewScene
         target={target}
         initialTime={5}
         mode={mode}
         isPractice={isPractice}
+        paused={connectionBlocked}
         onContinue={() => {
+          if (connectionBlocked) return;
           guessStartRef.current = Date.now();
           setPhase("guess");
         }}
-      />
+      />,
     );
   }
 
   if (phase === "guess") {
-    return (
+    return renderWithGuards(
       <GuessScene
         guess={guess}
         setGuess={setGuess}
@@ -683,12 +985,15 @@ export default function PlayClient({
         onSubmit={submitGuess}
         isPractice={isPractice}
         target={target}
-      />
+        paused={connectionBlocked}
+        submitting={submittingGuess}
+        submitLabel={submitFeedback}
+      />,
     );
   }
 
   if (phase === "waiting") {
-    return (
+    return renderWithGuards(
       <WaitingScene
         myAccuracy={acc}
         myTier={t}
@@ -700,12 +1005,12 @@ export default function PlayClient({
           isSubmittingRef.current = false;
           setPhase("select");
         }}
-      />
+      />,
     );
   }
 
   if (phase === "leaderboard") {
-    return (
+    return renderWithGuards(
       <LeaderboardScene
         result={roundResult!}
         myAddress={address!}
@@ -733,11 +1038,11 @@ export default function PlayClient({
           setRoundResult(null);
           setPhase("select");
         }}
-      />
+      />,
     );
   }
 
-  return (
+  return renderWithGuards(
     <ResultScene
       target={target}
       guess={guess}
@@ -752,6 +1057,6 @@ export default function PlayClient({
         setMatchedPlayers([]);
         setPhase("select");
       }}
-    />
+    />,
   );
 }

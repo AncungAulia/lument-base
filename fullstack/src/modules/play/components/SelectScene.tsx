@@ -9,7 +9,6 @@ import {
   Globe,
   Loader2,
   Play,
-  Shuffle,
   Swords,
   UserPlus,
   Users,
@@ -28,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 import { formatCompactUsdc } from "@/src/utils/utils";
 import type { Mode, TabKey } from "../types/play.types";
 import type { TargetDifficulty } from "@/src/utils/color";
@@ -43,6 +42,8 @@ export default function SelectScene({
   onlineCount,
   soloReserveBalance,
   roomLoading,
+  actionLoading,
+  actionLabel,
 }: {
   tab: TabKey;
   setTab: (t: TabKey) => void;
@@ -53,6 +54,8 @@ export default function SelectScene({
   onlineCount: number | null;
   soloReserveBalance: number;
   roomLoading?: string | null;
+  actionLoading?: boolean;
+  actionLabel?: string | null;
 }) {
   const [showSoloInfo, setShowSoloInfo] = useState(false);
   const [friendModal, setFriendModal] = useState<"closed" | "choose" | "create" | "join">("closed");
@@ -71,6 +74,10 @@ export default function SelectScene({
     setStakeAmount(5);
     setJoinCode("");
   };
+  const locked = !!roomLoading || !!actionLoading;
+  const lockedCardClass = locked
+    ? "cursor-not-allowed opacity-60"
+    : "cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none";
 
   return (
     <div className="max-w-2xl mx-auto page-enter">
@@ -99,8 +106,12 @@ export default function SelectScene({
       {tab === "single" ? (
         <div className="flex flex-col gap-4">
           <Card
-            className="group cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all"
-            onClick={() => onStart("solo", { practice: true })}
+            aria-disabled={locked}
+            className={`group transition-all ${lockedCardClass}`}
+            onClick={() => {
+              if (locked) return;
+              onStart("solo", { practice: true });
+            }}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -125,8 +136,12 @@ export default function SelectScene({
           </Card>
 
           <Card
-            className="group cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all"
-            onClick={() => onStart("solo")}
+            aria-disabled={locked}
+            className={`group transition-all ${lockedCardClass}`}
+            onClick={() => {
+              if (locked) return;
+              onStart("solo");
+            }}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -141,7 +156,7 @@ export default function SelectScene({
                     <span className="text-xs font-heading">i</span>
                   </button>
                   <Badge className="bg-chart-3 text-main-foreground">
-                    <span className="inline-flex items-center gap-1">5 <UsdcIcon size={12} /></span>
+                    <span className="inline-flex items-center gap-1">5 USDC</span>
                   </Badge>
                 </div>
               </div>
@@ -167,7 +182,7 @@ export default function SelectScene({
                         <span className="text-xs text-foreground/60">{entry.acc}</span>
                       </div>
                       <span className="inline-flex items-center gap-1 font-heading text-sm text-foreground">
-                        {entry.reward.replace(" USDC", "")} <UsdcIcon size={12} />
+                        {entry.reward.replace(" USDC", "")} USDC
                       </span>
                     </div>
                   ))}
@@ -179,7 +194,7 @@ export default function SelectScene({
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-2">
                   <Badge className="bg-chart-1 text-foreground border-border gap-1.5">
-                    Pool <strong>{formatCompactUsdc(soloReserveBalance)}</strong> <UsdcIcon size={12} />
+                    Pool <strong>{formatCompactUsdc(soloReserveBalance)}</strong> USDC
                   </Badge>
                 </div>
                 <div className="text-sm font-heading flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary-background border-2 border-border text-foreground transition-all duration-300 group-hover:bg-main group-hover:text-main-foreground">
@@ -192,8 +207,12 @@ export default function SelectScene({
       ) : (
         <div className="flex flex-col gap-4">
           <Card
-            className="group cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all"
-            onClick={() => setFriendModal("choose")}
+            aria-disabled={locked}
+            className={`group transition-all ${lockedCardClass}`}
+            onClick={() => {
+              if (locked) return;
+              setFriendModal("choose");
+            }}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -207,7 +226,7 @@ export default function SelectScene({
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-2"><Badge>Private Room</Badge><Badge>15s</Badge></div>
-                <div className="text-sm font-heading flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary-background border-2 border-border text-foreground transition-all duration-300 hover:bg-chart-1 hover:text-white">
+                <div className="text-sm font-heading flex items-center gap-1 px-4 py-1.5 rounded-full bg-secondary-background border-2 border-border text-foreground transition-all duration-300 group-hover:bg-chart-1 hover:text-white">
                   Start <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </div>
@@ -215,8 +234,12 @@ export default function SelectScene({
           </Card>
 
           <Card
-            className="group cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all"
-            onClick={() => setOnlineModal("choose")}
+            aria-disabled={locked}
+            className={`group transition-all ${lockedCardClass}`}
+            onClick={() => {
+              if (locked) return;
+              setOnlineModal("choose");
+            }}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -225,7 +248,7 @@ export default function SelectScene({
                 </CardTitle>
                 <Badge className="bg-chart-2 text-white">LIVE</Badge>
               </div>
-              <CardDescription>Match with random players worldwide and auto-stake when a match is found</CardDescription>
+              <CardDescription>Match with random players worldwide</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
@@ -261,11 +284,11 @@ export default function SelectScene({
               <CardContent>
                 {friendModal === "choose" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button onClick={() => setFriendModal("create")} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-1 hover:bg-chart-1/10 transition-all cursor-pointer flex flex-col items-center gap-3 text-center">
+                    <button disabled={locked} onClick={() => setFriendModal("create")} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-1 hover:bg-chart-1/10 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 flex flex-col items-center gap-3 text-center">
                       <div className="w-12 h-12 rounded-full bg-chart-1/20 border-2 border-chart-1/30 flex items-center justify-center"><Crown className="w-6 h-6 text-chart-1" /></div>
                       <div><span className="font-heading text-sm block">Create Room</span><span className="text-xs text-foreground/50">You become the leader</span></div>
                     </button>
-                    <button onClick={() => setFriendModal("join")} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-2 hover:bg-chart-2/10 transition-all cursor-pointer flex flex-col items-center gap-3 text-center">
+                    <button disabled={locked} onClick={() => setFriendModal("join")} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-2 hover:bg-chart-2/10 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 flex flex-col items-center gap-3 text-center">
                       <div className="w-12 h-12 rounded-full bg-chart-2/20 border-2 border-chart-2/30 flex items-center justify-center"><Users className="w-6 h-6 text-chart-2" /></div>
                       <div><span className="font-heading text-sm block">Join Room</span><span className="text-xs text-foreground/50">Enter a room code</span></div>
                     </button>
@@ -293,7 +316,7 @@ export default function SelectScene({
                         <DollarSign className="w-4 h-4 text-chart-2" />
                         <div>
                           <p className="font-heading text-sm">Stake Mode</p>
-                          <p className="text-xs text-foreground/50">Players bet <UsdcIcon className="mx-1" size={12} /> to play</p>
+                          <p className="text-xs text-foreground/50">Players bet USDC to play</p>
                         </div>
                       </div>
                       <Switch checked={isPaid} onCheckedChange={setIsPaid} disabled={!!roomLoading} />
@@ -310,7 +333,7 @@ export default function SelectScene({
                         </div>
                       </div>
                     )}
-                    <Button className="w-full gap-2 bg-chart-1 text-white border-chart-1" size="lg" disabled={!roomName.trim() || !!roomLoading}
+                    <Button className="w-full gap-2 bg-chart-1 text-white border-chart-1" size="lg" disabled={!roomName.trim() || locked}
                       onClick={() => onCreateRoom({ name: roomName.trim(), maxPlayers, paid: isPaid, stakeAmount: isPaid ? stakeAmount : 0, difficulty: "medium" })}
                     >
                       <Crown className="w-4 h-4" /> Create Room
@@ -330,7 +353,7 @@ export default function SelectScene({
                         className="w-full px-4 py-4 rounded-base border-2 border-border bg-secondary-background text-center text-3xl font-heading tracking-[0.3em] focus:outline-none focus:border-chart-1 transition-colors"
                       />
                     </div>
-                    <Button className="w-full gap-2 bg-chart-1 text-white border-chart-1 disabled:opacity-40 disabled:cursor-not-allowed" size="lg" disabled={joinCode.length < 4 || !!roomLoading} onClick={() => onJoinRoom(joinCode)}>
+                    <Button className="w-full gap-2 bg-chart-1 text-white border-chart-1 disabled:opacity-40 disabled:cursor-not-allowed" size="lg" disabled={joinCode.length < 4 || locked} onClick={() => onJoinRoom(joinCode)}>
                       <Users className="w-4 h-4" /> Join Room
                     </Button>
                   </div>
@@ -355,13 +378,13 @@ export default function SelectScene({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button onClick={() => { setOnlineModal("closed"); onJoinOnline("duel"); }} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-2 hover:bg-chart-2/10 transition-all cursor-pointer flex flex-col items-center gap-3 text-center">
+                  <button disabled={locked} onClick={() => { setOnlineModal("closed"); onJoinOnline("duel"); }} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-2 hover:bg-chart-2/10 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 flex flex-col items-center gap-3 text-center">
                     <div className="w-12 h-12 rounded-full bg-chart-2/20 border-2 border-chart-2/30 flex items-center justify-center"><Swords className="w-6 h-6 text-chart-2" /></div>
-                    <div><span className="font-heading text-sm block">1v1 Duel</span><span className="text-xs text-foreground/50 inline-flex items-center gap-1">Quick queue · 10 <UsdcIcon size={12} /> stake</span></div>
+                    <div><span className="font-heading text-sm block">1v1 Duel</span><span className="text-xs text-foreground/50 inline-flex items-center gap-1">Quick queue · 10 USDC</span></div>
                   </button>
-                  <button onClick={() => { setOnlineModal("closed"); onJoinOnline("royale"); }} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-3 hover:bg-chart-3/10 transition-all cursor-pointer flex flex-col items-center gap-3 text-center">
+                  <button disabled={locked} onClick={() => { setOnlineModal("closed"); onJoinOnline("royale"); }} className="p-5 rounded-base border-2 border-border bg-secondary-background hover:border-chart-3 hover:bg-chart-3/10 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 flex flex-col items-center gap-3 text-center">
                     <div className="w-12 h-12 rounded-full bg-chart-3/20 border-2 border-chart-3/30 flex items-center justify-center"><Crown className="w-6 h-6 text-chart-3" /></div>
-                    <div><span className="font-heading text-sm block">Quick Royale</span><span className="text-xs text-foreground/50 inline-flex items-center gap-1">5 players · 10 <UsdcIcon size={12} /> stake</span></div>
+                    <div><span className="font-heading text-sm block">Quick Royale</span><span className="text-xs text-foreground/50 inline-flex items-center gap-1">5 players · 10 USDC</span></div>
                   </button>
                 </div>
               </CardContent>
@@ -371,7 +394,7 @@ export default function SelectScene({
       )}
 
       {/* Room loading overlay */}
-      {roomLoading && (
+      {(roomLoading || actionLoading) && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 backdrop-blur-md animate-in fade-in duration-200">
           <div className="relative mx-4 w-full max-w-sm overflow-hidden rounded-[28px] border-[3px] border-border bg-background/90 p-7 shadow-[10px_10px_0_0_rgba(15,23,42,0.18)]">
             <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--chart-1),var(--chart-3),var(--chart-5))]" />
@@ -381,7 +404,7 @@ export default function SelectScene({
               </div>
               <div className="space-y-1">
                 <p className="text-[11px] font-heading uppercase tracking-[0.28em] text-foreground/45">Room Progress</p>
-                <h3 className="text-2xl font-heading text-foreground">{roomLoading}</h3>
+                <h3 className="text-2xl font-heading text-foreground">{roomLoading ?? actionLabel ?? "Preparing..."}</h3>
                 <p className="text-sm text-foreground/60">Do not close this page while the room is syncing.</p>
               </div>
             </div>

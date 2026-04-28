@@ -13,7 +13,7 @@ import { ONE_BILLION_USDC } from "../types/play.types";
 
 export type StakingStep = "approve" | "deposit";
 
-// Monad testnet's RPC sometimes returns null for eth_estimateGas, causing viem
+// Base Sepolia's RPC sometimes returns null for eth_estimateGas, causing viem
 // to crash with "Cannot destructure property 'gasLimit' … is null". Explicit
 // gas limits bypass estimation entirely.
 const GAS_APPROVE  = BigInt(120_000);

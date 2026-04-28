@@ -14,6 +14,7 @@ export default function MatchedLobbyScene({
   stakedCount,
   stakedPlayers,
   staking,
+  stakingLabel,
   countdown,
   onStake,
   onLeave,
@@ -24,6 +25,7 @@ export default function MatchedLobbyScene({
   stakedCount: number;
   stakedPlayers: string[];
   staking: boolean;
+  stakingLabel?: string;
   countdown: number | null;
   onStake: () => void;
   onLeave?: () => void;
@@ -75,7 +77,7 @@ export default function MatchedLobbyScene({
                         {shortAddr(player)} {isMe ? "(You)" : ""}
                       </p>
                       <p className="text-xs text-foreground/50">
-                        {staked ? "Stake locked" : "Waiting to stake"}
+                        {staked ? "Payment confirmed" : "Waiting to pay"}
                       </p>
                     </div>
                   </div>
@@ -86,7 +88,7 @@ export default function MatchedLobbyScene({
                         : "bg-secondary-background text-foreground border-border"
                     }
                   >
-                    {staked ? "Staked" : "Pending"}
+                    {staked ? "Paid" : "Pending"}
                   </Badge>
                 </div>
               );
@@ -119,7 +121,7 @@ export default function MatchedLobbyScene({
           onClick={onStake}
         >
           {staking ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Paying...</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> {stakingLabel ?? "Paying..."}</>
           ) : myStaked ? (
             <><Check className="w-4 h-4" /> Payed</>
           ) : (

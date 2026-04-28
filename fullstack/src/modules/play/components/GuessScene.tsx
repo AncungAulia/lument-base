@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { hslCss } from "@/src/utils/color";
 import type { HSL } from "@/src/utils/color";
 import type React from "react";
@@ -12,7 +12,9 @@ export default function GuessScene({
   initialTime = 17,
   onSubmit,
   isPractice,
-  target,
+  paused = false,
+  submitting = false,
+  submitLabel = "Submitting...",
 }: {
   guess: HSL;
   setGuess: (v: HSL) => void;
@@ -20,31 +22,49 @@ export default function GuessScene({
   onSubmit: () => void;
   isPractice: boolean;
   target: HSL;
+  paused?: boolean;
+  submitting?: boolean;
+  submitLabel?: string;
 }) {
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const submittedRef = useRef(false);
   const onSubmitRef = useRef(onSubmit);
-  onSubmitRef.current = onSubmit;
+  const timeLeftRef = useRef(initialTime);
 
   useEffect(() => {
-    if (isPractice) return;
-    const duration = initialTime * 1000;
-    let startTime: number | null = null;
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
+
+  const setSyncedTimeLeft = useCallback((value: number) => {
+    timeLeftRef.current = value;
+    setTimeLeft(value);
+  }, []);
+
+  const submitOnce = useCallback(() => {
+    if (submittedRef.current || submitting || paused) return;
+    submittedRef.current = true;
+    onSubmitRef.current();
+  }, [paused, submitting]);
+
+  useEffect(() => {
+    if (isPractice || paused || submitting) return;
+    let lastTime: number | null = null;
     let req: number;
     const step = (ts: number) => {
-      if (!startTime) startTime = ts;
-      const remaining = Math.max(0, duration - (ts - startTime));
-      setTimeLeft(remaining / 1000);
+      if (!lastTime) lastTime = ts;
+      const delta = ts - lastTime;
+      lastTime = ts;
+      const remaining = Math.max(0, timeLeftRef.current * 1000 - delta);
+      setSyncedTimeLeft(remaining / 1000);
       if (remaining > 0) {
         req = requestAnimationFrame(step);
       } else if (!submittedRef.current) {
-        submittedRef.current = true;
-        onSubmitRef.current();
+        submitOnce();
       }
     };
     req = requestAnimationFrame(step);
     return () => cancelAnimationFrame(req);
-  }, [initialTime, isPractice]);
+  }, [isPractice, paused, setSyncedTimeLeft, submitOnce, submitting]);
 
   return (
     <div className="game-zone max-w-3xl mx-auto page-enter">
@@ -62,8 +82,9 @@ export default function GuessScene({
           >
             <input
               type="range" min={0} max={360} value={guess.h}
+              disabled={submitting || paused}
               onChange={(e) => setGuess({ ...guess, h: Number(e.target.value) })}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ writingMode: "vertical-lr" as React.CSSProperties["writingMode"], direction: "ltr" }}
             />
             <div
@@ -80,8 +101,9 @@ export default function GuessScene({
           >
             <input
               type="range" min={0} max={100} value={guess.s}
+              disabled={submitting || paused}
               onChange={(e) => setGuess({ ...guess, s: Number(e.target.value) })}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ writingMode: "vertical-lr" as React.CSSProperties["writingMode"], direction: "rtl" }}
             />
             <div
@@ -98,8 +120,9 @@ export default function GuessScene({
           >
             <input
               type="range" min={0} max={100} value={guess.l}
+              disabled={submitting || paused}
               onChange={(e) => setGuess({ ...guess, l: Number(e.target.value) })}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ writingMode: "vertical-lr" as React.CSSProperties["writingMode"], direction: "rtl" }}
             />
             <div
@@ -119,10 +142,16 @@ export default function GuessScene({
             </div>
           )}
           <button
-            onClick={onSubmit}
-            className="absolute bottom-6 right-6 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 border-border shadow-shadow flex items-center justify-center hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all cursor-pointer"
+            onClick={submitOnce}
+            disabled={submitting || paused}
+            aria-label={submitting ? submitLabel : "Submit guess"}
+            className="absolute bottom-6 right-6 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 border-border shadow-shadow flex items-center justify-center hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-shadow"
           >
-            <ArrowRight className="w-6 h-6 text-foreground" />
+            {submitting ? (
+              <Loader2 className="w-6 h-6 text-foreground animate-spin" />
+            ) : (
+              <ArrowRight className="w-6 h-6 text-foreground" />
+            )}
           </button>
           {!isPractice && (
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">

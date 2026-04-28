@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 import type { StakingStep } from "../hooks/useStake";
 
 function StepItem({
@@ -67,17 +67,17 @@ export default function StakingScene({
         {
           label: (
             <span className="inline-flex items-center gap-2">
-              Approve 1 Miliar <UsdcIcon size={14} />
+              Approve USDC
             </span>
           ),
-          desc: "One-time approval — you will not need to approve again",
+          desc: "One-time approval. You will not need to approve again",
           state: step === "deposit" ? "done" : "active",
         },
         {
-          label: "Deposit Stake",
+          label: "Pay Entry",
           desc: (
             <span className="inline-flex items-center gap-1">
-              <UsdcIcon size={12} /> is locked in the smart contract until the round ends
+              USDC is locked in the smart contract until the round ends
             </span>
           ),
           state: step === "deposit" ? "active" : "pending",
@@ -85,10 +85,10 @@ export default function StakingScene({
       ]
     : [
         {
-          label: "Deposit Stake",
+          label: "Pay Entry",
           desc: (
             <span className="inline-flex items-center gap-1">
-              <UsdcIcon size={12} /> is locked in the smart contract until the round ends
+              USDC is locked in the smart contract until the round ends
             </span>
           ),
           state: "active",
@@ -99,9 +99,9 @@ export default function StakingScene({
     <div className="max-w-2xl mx-auto page-enter">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-heading text-foreground">Locking Stake</h1>
+          <h1 className="text-3xl font-heading text-foreground">Paying Entry</h1>
           <p className="text-foreground/60 text-sm">
-            Confirm your transaction, then wait for all matched players to lock stake
+            Confirm your transaction, then wait for all matched players to pay their entry
           </p>
         </div>
         <Badge className="bg-chart-1 text-white animate-pulse">SIGNING</Badge>

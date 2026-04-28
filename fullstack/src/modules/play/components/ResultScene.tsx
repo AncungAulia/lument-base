@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Share2, Vault } from "lucide-react";
+import { ArrowRight, Share2, CircleDollarSign } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+import { toast } from "sonner";
+
 import { hslCss } from "@/src/utils/color";
 import type { HSL } from "@/src/utils/color";
 import type { Mode } from "../types/play.types";
@@ -32,6 +33,7 @@ export default function ResultScene({
 }) {
   const [displayAcc, setDisplayAcc] = useState(0);
   const [showLabel, setShowLabel] = useState(false);
+  const [showEarned, setShowEarned] = useState(false);
 
   useEffect(() => {
     const duration = 1200;
@@ -41,19 +43,76 @@ export default function ResultScene({
       const progress = Math.min((ts - startTime) / duration, 1);
       setDisplayAcc((1 - Math.pow(2, -10 * progress)) * acc);
       if (progress < 1) requestAnimationFrame(step);
-      else setTimeout(() => setShowLabel(true), 400);
+      else {
+        setTimeout(() => setShowLabel(true), 400);
+        setTimeout(() => setShowEarned(true), 1000);
+      }
     };
     requestAnimationFrame(step);
   }, [acc]);
 
   const tierExpression = useMemo(() => {
     const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-    if (acc >= 98) return pick(["Absolute God Tier!", "Flawless Memory!", "Are you a Pantone?", "Pixel Perfect!"]);
-    if (acc >= 95) return pick(["Insane Accuracy!", "Eagle Eyes!", "Almost Perfect!", "Built Different!"]);
-    if (acc >= 90) return pick(["Solid Match!", "Not Bad At All!", "Pretty Damn Close!", "You've Got The Eye!"]);
-    if (acc >= 80) return pick(["Decent Effort!", "Getting There!", "Could Be Better!", "A Bit Off, But Okay"]);
-    return pick(["Way Off!", "Do you need glasses?", "Oof, that's rough", "Colorblind?"]);
+    if (acc >= 98)
+      return pick([
+        "Absolute God Tier!",
+        "Flawless Memory!",
+        "Are you a Pantone?",
+        "Pixel Perfect!",
+      ]);
+    if (acc >= 95)
+      return pick([
+        "Insane Accuracy!",
+        "Eagle Eyes!",
+        "Almost Perfect!",
+        "Built Different!",
+      ]);
+    if (acc >= 90)
+      return pick([
+        "Solid Match!",
+        "Not Bad At All!",
+        "Pretty Damn Close!",
+        "You've Got The Eye!",
+      ]);
+    if (acc >= 80)
+      return pick([
+        "Decent Effort!",
+        "Getting There!",
+        "Could Be Better!",
+        "A Bit Off, But Okay",
+      ]);
+    return pick([
+      "Way Off!",
+      "Do you need glasses?",
+      "Oof, that's rough",
+      "Colorblind?",
+    ]);
   }, [acc]);
+
+  const handleShare = async () => {
+    const text = `I just scored ${displayAcc.toFixed(1)}% accuracy in Lument!\n\nRank: ${tierExpression}\nReward: +${tier.payout} USDC 💰\n\nCan you beat my color matching skills?`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Lument Match Result",
+          text: text,
+          url: window.location.origin,
+        });
+      } catch (err) {
+        // If user cancels or it fails, fallback to clipboard
+        await navigator.clipboard.writeText(
+          `${text}\nPlay here: ${window.location.origin}`,
+        );
+        toast.success("Result copied to clipboard!");
+      }
+    } else {
+      await navigator.clipboard.writeText(
+        `${text}\nPlay here: ${window.location.origin}`,
+      );
+      toast.success("Result copied to clipboard!");
+    }
+  };
 
   return (
     <div className="game-zone max-w-3xl mx-auto page-enter">
@@ -61,7 +120,10 @@ export default function ResultScene({
         className="relative w-full rounded-2xl overflow-hidden border-2 border-border shadow-shadow flex flex-col"
         style={{ minHeight: "min(65vh,550px)" }}
       >
-        <div className="relative flex-1 p-6 flex flex-col justify-between" style={{ background: hslCss(guess) }}>
+        <div
+          className="relative flex-1 p-6 flex flex-col justify-between"
+          style={{ background: hslCss(guess) }}
+        >
           <div className="flex justify-end items-start w-full">
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-150 fill-mode-both flex flex-col items-end text-right">
               <div className="text-[64px] sm:text-[80px] font-heading text-white leading-none flex items-baseline justify-end gap-1">
@@ -76,29 +138,44 @@ export default function ResultScene({
             </div>
           </div>
           <div>
-            <p className="text-white/50 text-xs mb-1 uppercase tracking-wider">Your selection</p>
+            <p className="text-white/50 text-xs mb-1 uppercase tracking-wider">
+              Your selection
+            </p>
             <p className="text-white font-heading text-sm">
-              H{Math.round(guess.h)} S{Math.round(guess.s)} L{Math.round(guess.l)}
+              H{Math.round(guess.h)} S{Math.round(guess.s)} L
+              {Math.round(guess.l)}
             </p>
           </div>
         </div>
 
-        <div className="relative flex-1 p-6 flex flex-col justify-between" style={{ background: hslCss(target) }}>
+        <div
+          className="relative flex-1 p-6 flex flex-col justify-between"
+          style={{ background: hslCss(target) }}
+        >
           <div className="flex justify-end">
             {!isPractice && (
-              <div className="text-right animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500 fill-mode-both bg-black/20 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl">
-                <p className="text-white/70 text-xs uppercase tracking-wider mb-1">Earned ({tier.name})</p>
+              <div
+                className={`text-right bg-black/20 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl transition-all duration-700 ${showEarned ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              >
+                <p className="text-white/70 text-xs uppercase tracking-wider mb-1">
+                  Earned
+                </p>
                 <p className="text-white font-heading text-3xl">
-                  <span className="inline-flex items-center gap-2">+{tier.payout} <UsdcIcon size={18} /></span>
+                  <span className="inline-flex items-center gap-2">
+                    +{tier.payout} USDC
+                  </span>
                 </p>
               </div>
             )}
           </div>
           <div className="flex justify-between items-end">
             <div>
-              <p className="text-white/50 text-xs mb-1 uppercase tracking-wider">Target</p>
+              <p className="text-white/50 text-xs mb-1 uppercase tracking-wider">
+                Target
+              </p>
               <p className="text-white font-heading text-sm">
-                H{Math.round(target.h)} S{Math.round(target.s)} L{Math.round(target.l)}
+                H{Math.round(target.h)} S{Math.round(target.s)} L
+                {Math.round(target.l)}
               </p>
             </div>
             <button
@@ -114,9 +191,12 @@ export default function ResultScene({
       {!isPractice && (
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Button variant="neutral" asChild className="gap-2">
-            <Link href="/vault"><Vault className="w-4 h-4" /> Payout</Link>
+            <Link href="/payout">
+              <CircleDollarSign className="w-4 h-4" />
+              Claim Your Payout
+            </Link>
           </Button>
-          <Button variant="neutral" className="gap-2">
+          <Button variant="neutral" className="gap-2" onClick={handleShare}>
             <Share2 className="w-4 h-4" /> Share
           </Button>
         </div>

@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 import { shortAddr } from "@/src/utils/address";
 import { fetchPlayerNames } from "../services/rooms.service";
 import type { Room } from "../types/play.types";
@@ -24,6 +24,7 @@ export default function LobbyScene({
   room,
   myAddress,
   readying,
+  actionPending,
   onLeave,
   onCancel,
   onKick,
@@ -33,6 +34,7 @@ export default function LobbyScene({
   room: Room;
   myAddress: string;
   readying: boolean;
+  actionPending?: string | null;
   onLeave: () => void;
   onCancel: () => void;
   onKick: (target: string) => void;
@@ -48,6 +50,7 @@ export default function LobbyScene({
   const allReady = room.players.every((p) => p.status === "ready");
   const isFull = room.players.length >= room.maxPlayers;
   const canStart = amLeader && allReady && isFull;
+  const locked = readying || !!actionPending;
 
   useEffect(() => {
     if (room.players.length === 0) return;
@@ -75,7 +78,7 @@ export default function LobbyScene({
           <h1 className="text-3xl font-heading text-foreground">{room.name || "Room Lobby"}</h1>
           <p className="text-foreground/60 text-sm">
             {room.players.length}/{room.maxPlayers} players ·{" "}
-            {room.paid ? <>{room.stakeAmount} <UsdcIcon size={12} /> stake</> : "Casual"}
+            {room.paid ? <>{room.stakeAmount} USDC entry</> : "Casual"}
           </p>
         </div>
         <Badge className={room.paid ? "bg-chart-1 text-white" : "bg-chart-2 text-white"}>
@@ -154,14 +157,15 @@ export default function LobbyScene({
                         }`}
                       >
                         {player.status === "ready" ? "Ready" : "Not Ready"}
-                        {room.paid && player.staked && " · Staked"}
+                        {room.paid && player.staked && " · Paid"}
                       </span>
                     </div>
                   </div>
                   {amLeader && !isSelf && (
                     <button
+                      disabled={locked}
                       onClick={() => onKick(player.address)}
-                      className="w-7 h-7 rounded-full border-2 border-border bg-secondary-background text-foreground/40 hover:border-chart-4 hover:text-chart-4 hover:bg-chart-4/10 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
+                      className="w-7 h-7 rounded-full border-2 border-border bg-secondary-background text-foreground/40 hover:border-chart-4 hover:text-chart-4 hover:bg-chart-4/10 flex items-center justify-center transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -189,13 +193,13 @@ export default function LobbyScene({
           <Button
             className="w-full gap-2 bg-chart-2 text-white border-chart-2"
             size="lg"
-            disabled={readying}
+            disabled={locked}
             onClick={onToggleReady}
           >
             {readying ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> {room.paid ? "Staking..." : "Readying..."}</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> {room.paid ? "Paying..." : "Readying..."}</>
             ) : (
-              <><Check className="w-4 h-4" /> {room.paid ? "Stake & Ready" : "Ready Up"}</>
+              <><Check className="w-4 h-4" /> {room.paid ? "Pay & Ready" : "Ready Up"}</>
             )}
           </Button>
         )}
@@ -210,25 +214,39 @@ export default function LobbyScene({
           <Button
             className="w-full gap-2 bg-chart-1 text-white border-chart-1 disabled:opacity-40 disabled:cursor-not-allowed"
             size="lg"
-            disabled={!canStart}
+            disabled={!canStart || locked}
             onClick={onStart}
           >
-            <Play className="w-5 h-5" />
-            {!isFull
-              ? `Waiting for players (${room.players.length}/${room.maxPlayers})`
-              : !allReady
-                ? "Waiting for all players to ready"
-                : "Start Game"}
+            {actionPending === "start" ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Starting...</>
+            ) : (
+              <>
+                <Play className="w-5 h-5" />
+                {!isFull
+                  ? `Waiting for players (${room.players.length}/${room.maxPlayers})`
+                  : !allReady
+                    ? "Waiting for all players to ready"
+                    : "Start Game"}
+              </>
+            )}
           </Button>
         )}
         <div className="grid grid-cols-1 gap-2">
           {amLeader ? (
-            <Button variant="neutral" className="w-full gap-2" onClick={onCancel}>
-              <X className="w-4 h-4" /> Cancel Room
+            <Button variant="neutral" className="w-full gap-2" disabled={locked} onClick={onCancel}>
+              {actionPending === "cancel" ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Canceling...</>
+              ) : (
+                <><X className="w-4 h-4" /> Cancel Room</>
+              )}
             </Button>
           ) : (
-            <Button variant="neutral" className="w-full gap-2" onClick={onLeave}>
-              <ArrowLeft className="w-4 h-4" /> Leave Room
+            <Button variant="neutral" className="w-full gap-2" disabled={locked} onClick={onLeave}>
+              {actionPending === "leave" ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Leaving...</>
+              ) : (
+                <><ArrowLeft className="w-4 h-4" /> Leave Room</>
+              )}
             </Button>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { hslCss } from "@/src/utils/color";
 import type { HSL } from "@/src/utils/color";
 import type { Mode } from "../types/play.types";
@@ -8,36 +8,44 @@ import type { Mode } from "../types/play.types";
 export default function PreviewScene({
   target,
   initialTime = 5,
-  mode,
-  isPractice,
   onContinue,
+  paused = false,
 }: {
   target: HSL;
   initialTime?: number;
   mode: Mode;
   isPractice: boolean;
   onContinue: () => void;
+  paused?: boolean;
 }) {
   const [introState, setIntroState] = useState<"READY" | "SET" | "GO!" | null>("READY");
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const finishedRef = useRef(false);
+  const timeLeftRef = useRef(initialTime);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setIntroState("SET"), 800);
-    const t2 = setTimeout(() => setIntroState("GO!"), 1600);
-    const t3 = setTimeout(() => setIntroState(null), 2400);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  const setSyncedTimeLeft = useCallback((value: number) => {
+    timeLeftRef.current = value;
+    setTimeLeft(value);
   }, []);
 
   useEffect(() => {
-    if (introState !== null) return;
-    const duration = initialTime * 1000;
-    let startTime: number | null = null;
+    if (paused || introState === null) return;
+
+    const nextState = introState === "READY" ? "SET" : introState === "SET" ? "GO!" : null;
+    const id = setTimeout(() => setIntroState(nextState), 800);
+    return () => clearTimeout(id);
+  }, [introState, paused]);
+
+  useEffect(() => {
+    if (introState !== null || paused) return;
+    let lastTime: number | null = null;
     let req: number;
     const step = (ts: number) => {
-      if (!startTime) startTime = ts;
-      const remaining = Math.max(0, duration - (ts - startTime));
-      setTimeLeft(remaining / 1000);
+      if (!lastTime) lastTime = ts;
+      const delta = ts - lastTime;
+      lastTime = ts;
+      const remaining = Math.max(0, timeLeftRef.current * 1000 - delta);
+      setSyncedTimeLeft(remaining / 1000);
       if (remaining > 0) {
         req = requestAnimationFrame(step);
       } else if (!finishedRef.current) {
@@ -47,7 +55,7 @@ export default function PreviewScene({
     };
     req = requestAnimationFrame(step);
     return () => cancelAnimationFrame(req);
-  }, [introState, initialTime, onContinue]);
+  }, [introState, onContinue, paused, setSyncedTimeLeft]);
 
   return (
     <div className="game-zone max-w-3xl mx-auto page-enter">
@@ -55,7 +63,6 @@ export default function PreviewScene({
         className="relative w-full rounded-2xl overflow-hidden border-2 border-border shadow-shadow transition-colors duration-1000"
         style={{
           backgroundColor: introState !== null ? "#171717" : hslCss(target),
-          aspectRatio: "4/3",
           minHeight: "min(70vh,600px)",
         }}
       >
@@ -81,7 +88,7 @@ export default function PreviewScene({
           className="absolute bottom-6 right-6 text-white/30 text-sm font-heading transition-opacity duration-1000"
           style={{ opacity: introState !== null ? 0 : 1 }}
         >
-          Nadient
+          Lument
         </div>
       </div>
     </div>
