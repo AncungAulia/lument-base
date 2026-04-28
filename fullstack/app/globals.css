@@ -14,11 +14,15 @@
   --overlay: oklch(0% 0 0 / 0.8);
   --shadow: 2px 2px 0px 0px var(--border);
   --chart-1: #0099ff;
-  --chart-2: #ff4d50;
+  --chart-2: #05e17a;
   --chart-3: #facc00;
-  --chart-4: #05e17a;
+  --chart-4: #ff4d50;
   --chart-5: #7a83ff;
   --chart-active-dot: #000;
+  --success: oklch(59.6% 0.145 163.225);
+  --success-foreground: oklch(100% 0 0);
+  --error: oklch(58.6% 0.253 17.585);
+  --error-foreground: oklch(100% 0 0);
 }
 
 .dark {
@@ -31,11 +35,15 @@
   --ring: oklch(100% 0 0);
   --shadow: 2px 2px 0px 0px var(--border);
   --chart-1: #008ae5;
-  --chart-2: #ff6669;
+  --chart-2: #04c86d;
   --chart-3: #e0b700;
-  --chart-4: #04c86d;
+  --chart-4: #ff6669;
   --chart-5: #7a83ff;
   --chart-active-dot: #fff;
+  --success: oklch(59.6% 0.145 163.225);
+  --success-foreground: oklch(100% 0 0);
+  --error: oklch(58.6% 0.253 17.585);
+  --error-foreground: oklch(100% 0 0);
 }
 
 @theme inline {
@@ -52,6 +60,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
 
   --spacing-boxShadowX: 2px;
   --spacing-boxShadowY: 2px;
@@ -66,6 +78,9 @@
 @layer base {
   body {
     @apply text-foreground font-base bg-background;
+    transition:
+      background-color 0.5s ease,
+      color 0.5s ease;
   }
 
   h1,
@@ -81,6 +96,13 @@
 /* ── Game Zone: neutral override for color-matching gameplay ── */
 /* When actively playing, override the purple theme to monochrome    */
 /* so the player's eyes aren't biased by surrounding UI colors.      */
+body nav {
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+  will-change: opacity, transform;
+}
+
 body.game-active {
   --background: oklch(100% 0 0);
   --secondary-background: oklch(100% 0 0);
@@ -89,7 +111,9 @@ body.game-active {
 }
 
 body.game-active nav {
-  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-100%);
 }
 
 .dark body.game-active {
@@ -140,53 +164,6 @@ body.game-active nav {
 }
 
 /* ── Floating color swatches animation ────── */
-@keyframes float-1 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  25% {
-    transform: translate(15px, -20px) rotate(5deg);
-  }
-  50% {
-    transform: translate(-10px, -35px) rotate(-3deg);
-  }
-  75% {
-    transform: translate(20px, -15px) rotate(4deg);
-  }
-}
-@keyframes float-2 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  33% {
-    transform: translate(-20px, -25px) rotate(-6deg);
-  }
-  66% {
-    transform: translate(15px, -10px) rotate(4deg);
-  }
-}
-@keyframes float-3 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate(10px, -30px) rotate(8deg);
-  }
-}
-
-.float-swatch-1 {
-  animation: float-1 6s ease-in-out infinite;
-}
-.float-swatch-2 {
-  animation: float-2 8s ease-in-out infinite;
-}
-.float-swatch-3 {
-  animation: float-3 7s ease-in-out infinite;
-}
-
 /* ── Blink animation ──────────────────────── */
 @keyframes blink {
   0%,
@@ -220,7 +197,6 @@ body.game-active nav {
   border: 2px solid var(--border);
   box-shadow: var(--shadow);
   border-radius: var(--radius-base);
-  transition: all 0.2s ease;
 }
 
 .swatch-compare {
@@ -341,4 +317,8 @@ body.game-active nav {
 .animate-smash-zoom {
   animation: smash-zoom-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   opacity: 0;
+}
+
+* {
+  scroll-behavior: smooth;
 }

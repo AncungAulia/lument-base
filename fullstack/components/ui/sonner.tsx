@@ -34,18 +34,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
         unstyled: true,
         classNames: {
           toast:
-            "w-[min(92vw,356px)] rounded-base border-2 border-border text-foreground shadow-shadow p-4",
-          title: "font-heading text-sm text-foreground",
-          description: "font-base text-xs leading-5 text-foreground/80 ",
+            "w-[min(92vw,356px)] rounded-base border-2 border-border shadow-shadow p-4",
+          title: "font-heading text-sm",
+          description: "font-base text-xs leading-5 opacity-80",
           actionButton:
-            "font-base border-2 text-[12px] h-6 px-2 bg-main text-main-foreground border-border rounded-base shrink-0",
+            "font-base border-2 text-[12px] h-6 px-2 bg-secondary-background text-foreground border-border rounded-base shrink-0",
           cancelButton:
             "font-base border-2 text-[12px] h-6 px-2 bg-secondary-background text-foreground border-border rounded-base shrink-0",
-          success: "bg-main",
-          error: "bg-main",
-          warning: "bg-main",
-          info: "bg-main",
-          loading: "bg-main",
+          success: "bg-success text-success-foreground",
+          error: "bg-error text-error-foreground",
+          warning: "bg-chart-3 text-main-foreground",
+          info: "bg-main text-main-foreground",
+          loading: "bg-main text-main-foreground",
           icon: "hidden",
         },
       }}
