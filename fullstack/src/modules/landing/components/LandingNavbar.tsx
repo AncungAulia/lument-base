@@ -3,6 +3,7 @@
 import { Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/src/provider/WalletContext";
+import { LumentLogo } from "@/src/components/LumentLogo";
 
 export default function LandingNavbar({ onPlay }: { onPlay: () => void }) {
   const { isConnected } = useWallet();
@@ -12,13 +13,11 @@ export default function LandingNavbar({ onPlay }: { onPlay: () => void }) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-base bg-main border-2 border-border shadow-shadow flex items-center justify-center">
-              <span className="text-main-foreground font-heading text-sm">N</span>
-            </div>
+            <LumentLogo className="w-8 h-8" />
             <span className="font-heading text-xl text-foreground">Lument</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={onPlay} className="gap-2" variant={isConnected ? "default" : "neutral"}>
+            <Button data-kinetic onClick={onPlay} className="gap-2 transform-gpu" variant={isConnected ? "default" : "neutral"}>
               {isConnected ? (
                 <><Zap className="w-4 h-4" /> Play Now</>
               ) : (
