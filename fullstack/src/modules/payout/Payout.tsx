@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 import { formatUsdc } from "@/src/utils/utils";
 import { useWallet } from "@/src/provider/WalletContext";
 import { usePayout } from "./hooks/usePayout";
@@ -35,12 +35,12 @@ export default function Payout() {
         <CardHeader>
           <CardDescription>CLAIMABLE BALANCE</CardDescription>
           <CardTitle className="flex items-center gap-2 text-4xl">
-            {formatUsdc(claimable)} <UsdcIcon size={28} />
+            {formatUsdc(claimable)} USDC
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-foreground/60 mb-4">
-            Win games to earn <UsdcIcon className="mx-1" />. Withdraw your
+            Win games to earn USDC. Withdraw your
             payout anytime.
           </p>
           <Button
@@ -58,7 +58,7 @@ export default function Payout() {
                 <ArrowUpFromLine className="w-5 h-5" />
                 {claimable > 0 ? (
                   <span className="inline-flex items-center gap-2">
-                    Claim {formatUsdc(claimable)} <UsdcIcon />
+                    Claim {formatUsdc(claimable)} USDC
                   </span>
                 ) : (
                   "Nothing to Claim"
@@ -76,7 +76,7 @@ export default function Payout() {
               YOUR WALLET BALANCE
             </p>
             <p className="text-2xl font-heading text-foreground">
-              {formatUsdc(walletBalance)} <UsdcIcon size={25} />
+              {formatUsdc(walletBalance)} USDC
             </p>
           </CardContent>
         </Card>

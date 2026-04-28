@@ -54,7 +54,7 @@ export function usePayout(address: string | null) {
       showSuccessToast("Payout submitted", {
         description:
           "Your withdrawal is on-chain. Balance will refresh shortly.",
-        id: "vault-claim-submitted",
+        id: "payout-claim-submitted",
       });
       setTimeout(() => {
         refetchClaimable();
@@ -66,7 +66,7 @@ export function usePayout(address: string | null) {
       setError(message);
       showErrorToast("Claim failed", {
         description: message,
-        id: `vault-claim-error:${message}`,
+        id: `payout-claim-error:${message}`,
       });
     } finally {
       setClaiming(false);

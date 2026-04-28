@@ -3,7 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 import type { ProfileData } from "../types/profile.types";
 
 function tierCardClass(tierName: string): string {
@@ -51,7 +51,7 @@ export default function RecentRounds({
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-xs font-base text-foreground/70">{round.acc.toFixed(1)}%</span>
                   <Badge className={`${round.payout === 0 ? "bg-chart-4" : "bg-chart-2"} text-main-foreground`}>
-                    <span className="inline-flex items-center gap-1">+{round.payout.toFixed(1)} <UsdcIcon size={12} /></span>
+                    <span className="inline-flex items-center gap-1">+{round.payout.toFixed(1)} USDC</span>
                   </Badge>
                 </div>
               </CardContent>

@@ -3,7 +3,7 @@
 import { Coins, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 import { formatUsdc } from "@/src/utils/utils";
 
 export default function BalanceCard({
@@ -25,11 +25,11 @@ export default function BalanceCard({
         <div>
           <p className="font-heading text-foreground text-sm">Balance</p>
           <p className="flex items-center gap-2 text-2xl font-heading text-foreground">
-            {formatUsdc(walletBalance)} <UsdcIcon size={22} />
+            {formatUsdc(walletBalance)} USDC
           </p>
           {claimable > 0 && (
             <p className="mt-1 flex items-center gap-1 text-xs text-chart-2">
-              +{formatUsdc(claimable)} <UsdcIcon size={12} /> ready in Payout
+              +{formatUsdc(claimable)} USDC ready in Payout
             </p>
           )}
         </div>
@@ -40,7 +40,7 @@ export default function BalanceCard({
             <Coins className="w-4 h-4" />
           )}
           {canClaim ? (
-            <span className="inline-flex items-center gap-2">Mint 100 <UsdcIcon /></span>
+            <span className="inline-flex items-center gap-2">Mint 100 USDC</span>
           ) : (
             "Cooldown"
           )}
