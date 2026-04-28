@@ -4,7 +4,7 @@ export default function StatsSection() {
   return (
     <section className="py-20 px-4">
       <div className="max-w-4xl mx-auto">
-        <Card className="bg-main text-main-foreground">
+        <Card data-scroll-card data-kinetic className="bg-main text-main-foreground transform-gpu">
           <CardContent className="pt-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div><div className="text-3xl font-heading">$12.4K</div><div className="text-sm opacity-80">Current Jackpot</div></div>

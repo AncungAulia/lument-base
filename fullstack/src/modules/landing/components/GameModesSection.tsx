@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import UsdcIcon from "@/src/components/elements/UsdcIcon";
+
 
 export default function GameModesSection() {
   return (
@@ -11,51 +11,52 @@ export default function GameModesSection() {
           <h2 className="text-3xl sm:text-4xl font-heading text-foreground">Choose Your Battle</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-main/10">
+          <Card data-scroll-card data-kinetic className=" transform-gpu">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Solo</CardTitle>
-                <Badge><UsdcIcon size={14} /></Badge>
+                <Badge className="bg-main text-main-foreground">
+                  <span className="inline-flex items-center gap-1">5 USDC</span>
+                </Badge>
               </div>
-              <CardDescription>Play at your own pace. Match colors, earn based on accuracy. Up to 2.0x payout.</CardDescription>
+              <CardDescription>
+                Hone your skills. Only your accuracy matters. Score ≥90% to profit, hit ≥98% for the 10.0 USDC Jackpot!
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                <Badge className="bg-chart-3 text-main-foreground">JACKPOT 10.0</Badge>
-                <Badge className="bg-chart-2 text-main-foreground">GREAT 7.5</Badge>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card data-scroll-card data-kinetic data-rotate="-0.5" className="transform-gpu">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Duel</CardTitle>
-                <Badge className="bg-chart-4 text-secondary-background">
-                  <span className="inline-flex items-center gap-1">10 <UsdcIcon size={12} /></span>
+                <Badge className="bg-main text-main-foreground">
+                  <span className="inline-flex items-center gap-1">10 USDC</span>
                 </Badge>
               </div>
               <CardDescription>
-                <span className="inline-flex items-center gap-1">1v1 showdown. 17 seconds. Winner takes 16 <UsdcIcon size={12} /> (80% of the pool).</span>
+                <span className="inline-flex items-center gap-1">Head-to-head showdown. 20 seconds. Highest accuracy survives. Winner takes 16 USDC.</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2"><Badge>POOL 20</Badge><Badge>17s</Badge></div>
+            
             </CardContent>
           </Card>
-          <Card>
+          <Card data-scroll-card data-kinetic className="transform-gpu">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Royale</CardTitle>
-                <Badge className="bg-chart-4 text-secondary-background">
-                  <span className="inline-flex items-center gap-1">10 <UsdcIcon size={12} /></span>
+                <Badge className="bg-main text-main-foreground">
+                  <span className="inline-flex items-center gap-1">10 USDC</span>
                 </Badge>
               </div>
               <CardDescription>
-                <span className="inline-flex items-center gap-1">5 players. Same color. Highest accuracy wins 40 <UsdcIcon size={12} /> from the pool.</span>
+                <span className="inline-flex items-center gap-1">5-player free-for-all. Same color, same timer. Highest accuracy wins the huge 40 USDC pool!</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2"><Badge>POOL 50</Badge><Badge>17s</Badge></div>
             </CardContent>
           </Card>
         </div>
